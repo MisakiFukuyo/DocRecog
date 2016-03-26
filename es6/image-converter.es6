@@ -100,7 +100,7 @@ function otsuThresholdBinary(grayCanvas,options={}){
   return binCanvas
 }
 
-function adaptiveThresholdBinary(grayCanvas,options={size:8}){
+function adaptiveThresholdBinary(grayCanvas,options={size:16}){
   var grayCtx = grayCanvas.getContext('2d')
   var grayPixels = grayCtx.getImageData(0, 0, grayCanvas.width, grayCanvas.height).data
 

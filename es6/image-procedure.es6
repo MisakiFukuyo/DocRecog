@@ -1,3 +1,6 @@
+//reference
+// 画像処理におけるアルゴリズム - http://homepage2.nifty.com/tsugu/sotuken/ronbun/sec3-2.html#0014
+
 function get8(i,width,height){
   var u = i - width
   var d = i + width
