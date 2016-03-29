@@ -202,7 +202,7 @@ function getNextIdxFromNextPrevious(i,width,nextPreviousXY){
   return i + nextPreviousXY[1] * width + nextPreviousXY[0]
 }
 
-function traceContours(binaries,width,height,size){
+function traceContours(binaries,width,height,sizeMin,sizeMax){
   var l = width*height
   var allContours = []
   for(var i=0;i<l;i++){
@@ -234,7 +234,7 @@ function traceContours(binaries,width,height,size){
           contoursNSize++
         }
       })
-      if(contoursNSize > size){
+      if(contoursNSize > sizeMin && contoursNSize < sizeMax){
         allContours.push(contoursN)
       }
     }
@@ -242,4 +242,8 @@ function traceContours(binaries,width,height,size){
   return allContours
 }
 
-export {traceContours}
+function getPolygonRamerDouglasPeucker(points,epsilon){
+  return simplify(points, epsilon, true).slice(1)
+}
+
+export {traceContours,getConvexHull,getPolygonRamerDouglasPeucker}

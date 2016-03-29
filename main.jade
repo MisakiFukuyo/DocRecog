@@ -2,8 +2,11 @@ doctype html
 html(lang='en')
   head
     title DocRecog
+    
   body
     h1 DocRecog
     p Input document from image
-    img.sample1(src="images/sample1.jpg")
+    video(autoplay)
+    script(src='javascripts/simplify.js')
+    script(src='javascripts/graham_scan.min.js')
     script(src='javascripts/bundle.js')

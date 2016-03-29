@@ -3,9 +3,9 @@ import * as gaussianBlur from './fastest-gaussian-blur.es6'
 function imageToCanvas(img,options = {scale:1.0}){
   var canvas = document.createElement('canvas')
   var ctx = canvas.getContext('2d')
-  canvas.width = parseInt(img.width * options.scale)
-  canvas.height = parseInt(img.height * options.scale)
-  ctx.drawImage(img, 0, 0,img.width ,img.height,0,0,canvas.width,canvas.height)
+  canvas.width = parseInt(options.overloadingX ? options.overloadingX  : img.width * options.scale)
+  canvas.height = parseInt(options.overloadingY ? options.overloadingY  : img.height * options.scale)
+  ctx.drawImage(img, 0, 0,options.overloadingX ? options.overloadingX  : img.width ,options.overloadingY ? options.overloadingY  : img.height,0,0,canvas.width,canvas.height)
   return canvas
 }
 
