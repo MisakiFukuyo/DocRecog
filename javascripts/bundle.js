@@ -54,6 +54,10 @@
 
 	var imageProcedure = _interopRequireWildcard(_imageProcedure);
 
+	var _highUtils = __webpack_require__(4);
+
+	var highLevelUtils = _interopRequireWildcard(_highUtils);
+
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 	window.addEventListener('load', function () {
@@ -97,12 +101,15 @@
 	      var bin = imageConverter.adaptiveThresholdBinary(gray, { size: 64 });
 	      var binaryImageData = bin.getContext('2d').getImageData(0, 0, bin.width, bin.height);
 	      var binaryPixels = binaryImageData.data;
-	      var binaries = new Array(bin.width * bin.height);
-	      for (var i = 0; i < binaries.length; i++) {
-	        binaries[i] = binaryPixels[i * 4];
+	      var binariesTri = new Array(bin.width * bin.height);
+	      var binariesSqr = new Array(bin.width * bin.height);
+	      for (var i = 0; i < binariesTri.length; i++) {
+	        binariesTri[i] = binaryPixels[i * 4];
+	        binariesSqr[i] = binaryPixels[i * 4];
 	      }
 
-	      var allContours = imageProcedure.traceContours(binaries, bin.width, bin.height, 50, 1600);
+	      var triContours = imageProcedure.traceContours(binariesTri, bin.width, bin.height, 300, 900);
+	      var sqrContours = imageProcedure.traceContours(binariesSqr, bin.width, bin.height, 1400, 3000);
 
 	      function indexToXY(p, width) {
 	        var x = p % width;
@@ -110,39 +117,74 @@
 	        return { x: x, y: y };
 	      }
 
-	      var allPolygons = [];
-	      allContours.forEach(function (contour) {
+	      var triangle = [];
+	      triContours.forEach(function (contour) {
 	        var points = [];
 	        contour.forEach(function (p) {
 	          points.push(indexToXY(p, bin.width));
 	        });
-	        allPolygons.push(imageProcedure.getPolygonRamerDouglasPeucker(points, window.epsilon));
+	        var poly = imageProcedure.getPolygonRamerDouglasPeucker(points, window.epsilon);
+	        if (poly.length == 3) {
+	          triangle.push(poly);
+	        }
+	      });
+
+	      var square = [];
+	      sqrContours.forEach(function (contour) {
+	        var points = [];
+	        contour.forEach(function (p) {
+	          points.push(indexToXY(p, bin.width));
+	        });
+	        var poly = imageProcedure.getPolygonRamerDouglasPeucker(points, window.epsilon);
+	        if (poly.length == 4) {
+	          square.push(poly);
+	        }
 	      });
 
 	      overlayCtx.drawImage(orig, 0, 0, 1280, 720);
 
-	      allPolygons.forEach(function (e) {
-	        if (e.length == 4) {
-	          for (var i = 0; i < e.length; i++) {
-	            var x = e[i].x;
-	            var y = e[i].y;
-	            overlayCtx.fillStyle = '#00ff00';
-	            overlayCtx.beginPath();
-	            overlayCtx.arc(x, y, 4, 0, Math.PI * 2, true);
-	            overlayCtx.closePath();
-	            overlayCtx.fill();
+	      var marker = [];
+	      square.forEach(function (s) {
+	        triangle.forEach(function (t) {
+	          if (highLevelUtils.isPointsInnerPoints(s, t)) {
+	            marker.push(s);
 	          }
+	        });
+	      });
+
+	      marker.forEach(function (e) {
+	        for (var i = 0; i < e.length; i++) {
+	          var x = e[i].x;
+	          var y = e[i].y;
+	          overlayCtx.fillStyle = '#ff0000';
+	          overlayCtx.beginPath();
+	          overlayCtx.arc(x, y, 7, 0, Math.PI * 2, true);
+	          overlayCtx.closePath();
+	          overlayCtx.fill();
 	        }
-	        if (e.length == 3) {
-	          for (var i = 0; i < e.length; i++) {
-	            var x = e[i].x;
-	            var y = e[i].y;
-	            overlayCtx.fillStyle = '#0000ff';
-	            overlayCtx.beginPath();
-	            overlayCtx.arc(x, y, 4, 0, Math.PI * 2, true);
-	            overlayCtx.closePath();
-	            overlayCtx.fill();
-	          }
+	      });
+
+	      square.forEach(function (e) {
+	        for (var i = 0; i < e.length; i++) {
+	          var x = e[i].x;
+	          var y = e[i].y;
+	          overlayCtx.fillStyle = '#00ff00';
+	          overlayCtx.beginPath();
+	          overlayCtx.arc(x, y, 5, 0, Math.PI * 2, true);
+	          overlayCtx.closePath();
+	          overlayCtx.fill();
+	        }
+	      });
+
+	      triangle.forEach(function (e) {
+	        for (var i = 0; i < e.length; i++) {
+	          var x = e[i].x;
+	          var y = e[i].y;
+	          overlayCtx.fillStyle = '#0000ff';
+	          overlayCtx.beginPath();
+	          overlayCtx.arc(x, y, 3, 0, Math.PI * 2, true);
+	          overlayCtx.closePath();
+	          overlayCtx.fill();
 	        }
 	      });
 	    }, 1000 / fps);
@@ -179,7 +221,7 @@
 	}
 
 	function grayScale(canvas) {
-	  var options = arguments.length <= 1 || arguments[1] === undefined ? { alpha: true } : arguments[1];
+	  var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	  var ctx = canvas.getContext('2d');
 	  var grayCanvas = document.createElement('canvas');
@@ -667,27 +709,57 @@
 	  return allContours;
 	}
 
-	function getConvexHull(allContours, width) {
-	  var allConvexHullPoints = [];
-	  allContours.forEach(function (contours) {
-	    var convexHull = new ConvexHullGrahamScan();
-	    contours.forEach(function (p) {
-	      var x = p % width;
-	      var y = (p - x) / width;
-	      convexHull.addPoint(x, y);
-	    });
-	    allConvexHullPoints.push(convexHull.getHull());
-	  });
-	  return allConvexHullPoints;
-	}
-
 	function getPolygonRamerDouglasPeucker(points, epsilon) {
 	  return simplify(points, epsilon, true).slice(1);
 	}
 
 	exports.traceContours = traceContours;
-	exports.getConvexHull = getConvexHull;
 	exports.getPolygonRamerDouglasPeucker = getPolygonRamerDouglasPeucker;
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	// ref : http://www.hiramine.com/programming/graphics/2d_ispointinpolygon.html
+
+	function isPointInnerPoints(points, point) {
+	  var crossingCount = 0;
+	  var initialPoint = points[0];
+	  var xFlag = point.x <= initialPoint.x;
+	  var yFlag = point.y <= initialPoint.y;
+	  for (var i = 1; i <= points.length; i++) {
+	    var pointB = points[i % points.length];
+	    var xFlagB = point.x <= pointB.x;
+	    var yFlagB = point.y <= pointB.y;
+	    if (yFlag != yFlagB) {
+	      if (xFlag == xFlagB && xFlag) {
+	        crossingCount += yFlag ? -1 : 1;
+	      } else if (point.x <= initialPoint.x + (pointB.x - initialPoint.x) * (point.y - initialPoint.y) / (pointB.y - initialPoint.y)) {
+	        crossingCount += yFlag ? -1 : 1;
+	      }
+	    }
+	    initialPoint = pointB;
+	    xFlagB = xFlag;
+	    yFlagB = yFlag;
+	  }
+	  return crossingCount != 0;
+	}
+
+	function isPointsInnerPoints(pointsOuter, pointsInner) {
+	  for (var i = 0; i < pointsInner.length; i++) {
+	    if (!isPointInnerPoints(pointsOuter, pointsInner[i])) {
+	      return false;
+	    }
+	  }
+	  return true;
+	}
+
+	exports.isPointsInnerPoints = isPointsInnerPoints;
 
 /***/ }
 /******/ ]);

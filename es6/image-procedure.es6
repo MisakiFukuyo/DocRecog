@@ -246,4 +246,4 @@ function getPolygonRamerDouglasPeucker(points,epsilon){
   return simplify(points, epsilon, true).slice(1)
 }
 
-export {traceContours,getConvexHull,getPolygonRamerDouglasPeucker}
+export {traceContours,getPolygonRamerDouglasPeucker}
